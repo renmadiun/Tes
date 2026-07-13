@@ -18,6 +18,6 @@
 // ============================================================
 
 const CONFIG = {
-  NKO_CSV_URL: "",
-  INDIKATOR_CSV_URL: ""
+  NKO_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2hHu9XdLJR1tnYthzECx0armrL40W8POGagzfnjnmMO_yGVERHqccySMs57KKQA/pub?gid=234297028&single=true&output=csv",
+  INDIKATOR_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2hHu9XdLJR1tnYthzECx0armrL40W8POGagzfnjnmMO_yGVERHqccySMs57KKQA/pub?gid=2060928322&single=true&output=csv"
 };
