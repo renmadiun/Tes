@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kinerja ULP — UP3 Madiun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<style>
+  :root{
+    --bg:#0A1524;
+    --bg-grid: rgba(124,147,179,0.08);
+    --panel:#111F35;
+    --panel-2:#0D1A2E;
+    --line:#1E3050;
+    --line-soft:#182842;
+    --text:#EAF1FB;
+    --muted:#7C93B3;
+    --muted-2:#546A8A;
+    --blue:#2E8BFF;
+    --blue-dim: rgba(46,139,255,0.14);
+    --amber:#FFB100;
+    --amber-dim: rgba(255,177,0,0.14);
+    --good:#34D399;
+    --good-dim: rgba(52,211,153,0.14);
+    --warn:#FBBF24;
+    --warn-dim: rgba(251,191,36,0.14);
+    --bad:#F87171;
+    --bad-dim: rgba(248,113,113,0.14);
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  body{
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-attachment:fixed;
+    min-height:100vh;
+    padding-bottom: 60px;
+  }
+  .wrap{ max-width:1320px; margin:0 auto; padding: 28px 24px 0; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .display{ font-family:'Space Grotesk', sans-serif; }
+
+  /* ---------- HEADER ---------- */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    padding-bottom:20px; border-bottom:1px solid var(--line); margin-bottom:26px;
+    flex-wrap:wrap; gap:16px;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    width:42px; height:42px; border-radius:10px;
+    background: linear-gradient(145deg, var(--blue), #1550A0);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 0 1px rgba(46,139,255,0.35), 0 8px 20px -6px rgba(46,139,255,0.55);
+    flex-shrink:0;
+  }
+  .brand-mark svg{ width:22px; height:22px; }
+  .brand h1{ font-size:19px; font-weight:600; letter-spacing:0.2px; }
+  .brand p{ font-size:12.5px; color:var(--muted); margin-top:2px; letter-spacing:0.3px; text-transform:uppercase; }
+  .period-badge{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel); border:1px solid var(--line);
+    padding:9px 16px; border-radius:999px; font-size:12.5px; color:var(--muted);
+  }
+  .period-badge b{ color:var(--text); font-weight:600; }
+  .dot-live{ width:7px; height:7px; border-radius:50%; background:var(--good); box-shadow:0 0 0 3px var(--good-dim); }
+
+  /* ---------- KPI CARDS ---------- */
+  .kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px; }
+  .kpi{
+    background:linear-gradient(180deg, var(--panel), var(--panel-2));
+    border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;
+    position:relative; overflow:hidden;
+  }
+  .kpi::before{
+    content:''; position:absolute; top:0; left:0; width:100%; height:2px;
+    background: var(--accent, var(--blue));
+  }
+  .kpi .k-label{ font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; font-weight:600; }
+  .kpi .k-value{ font-size:30px; font-weight:700; margin-top:8px; display:flex; align-items:baseline; gap:8px; }
+  .kpi .k-value small{ font-size:13px; color:var(--muted); font-weight:500; }
+  .kpi .k-sub{ font-size:12.5px; color:var(--muted-2); margin-top:6px; }
+  .kpi .k-sub b{ color:var(--good); }
+  .kpi .k-sub b.down{ color:var(--bad); }
+
+  /* ---------- SECTION ---------- */
+  section{ margin-bottom:26px; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;}
+  .section-head h2{ font-size:15.5px; font-weight:600; letter-spacing:0.2px; }
+  .section-head .hint{ font-size:12px; color:var(--muted); }
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); }
+
+  /* ---------- RANKING TABLE (signature) ---------- */
+  .rank-table{ padding: 6px 6px 14px; }
+  .rank-row{
+    display:grid;
+    grid-template-columns: 40px 1fr 120px 160px 90px 100px;
+    align-items:center; gap:14px;
+    padding:13px 16px; border-bottom:1px solid var(--line-soft);
+    transition: background .15s ease;
+  }
+  .rank-row:last-child{ border-bottom:none; }
+  .rank-row:hover{ background: rgba(46,139,255,0.05); }
+  .rank-row.head{ color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.6px; font-weight:600; padding-bottom:10px; }
+  .rank-num{ font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:var(--muted-2); text-align:center;}
+  .rank-num.top1{ color:var(--amber); }
+  .rank-name{ display:flex; flex-direction:column; gap:2px; cursor:pointer; }
+  .rank-name b{ font-size:14px; font-weight:600; }
+  .rank-name span{ font-size:11.5px; color:var(--muted); }
+  .rank-score{ font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; text-align:right; }
+  .voltbar-track{ height:9px; border-radius:6px; background:var(--line-soft); overflow:hidden; position:relative; }
+  .voltbar-fill{ height:100%; border-radius:6px; transition: width .5s ease; }
+  .status-pill{ font-size:11px; font-weight:600; padding:4px 10px; border-radius:999px; text-align:center; white-space:nowrap; }
+  .status-baik{ background:var(--good-dim); color:var(--good); }
+  .status-cukup{ background:var(--warn-dim); color:var(--warn); }
+  .status-masalah{ background:var(--bad-dim); color:var(--bad); }
+  .proj-val{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--muted); text-align:right; }
+  .proj-val b{ color:var(--text); font-weight:600; }
+
+  /* ---------- CHART ---------- */
+  .chart-panel{ padding:20px; }
+  .legend-row{ display:flex; flex-wrap:wrap; gap:8px 16px; margin-bottom:14px; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; user-select:none; }
+  .legend-item .sw{ width:10px; height:10px; border-radius:3px; }
+  .legend-item.off{ opacity:0.3; }
+  canvas{ max-height:340px; }
+
+  /* ---------- HEATMAP ---------- */
+  .ind-select{
+    background:var(--panel-2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:9px 12px; font-size:13px; font-family:'Inter',sans-serif;
+    max-width:100%; width:100%; cursor:pointer;
+  }
+  .ind-select:focus{ outline:1px solid var(--blue); }
+
+  .heatmap-wrap{ overflow-x:auto; padding:18px; }
+  table.heat{ border-collapse:collapse; width:100%; min-width:760px; }
+  table.heat th{ font-size:10.8px; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); font-weight:600; text-align:center; padding:8px 6px; border-bottom:1px solid var(--line); }
+  table.heat th.ind-col{ text-align:left; padding-left:4px; }
+  table.heat td{ text-align:center; padding:7px 6px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-bottom:1px solid var(--line-soft); }
+  table.heat td.ind-col{ text-align:left; font-family:'Inter',sans-serif; font-size:12.5px; color:var(--text); }
+  table.heat tr.group-row td.ind-col{ font-weight:700; color:var(--blue); padding-top:14px; font-size:12px; text-transform:uppercase; letter-spacing:0.3px; }
+  table.heat tr.group-row{ background:transparent; }
+  .heat-cell{ display:inline-block; min-width:48px; padding:3px 6px; border-radius:5px; font-weight:600; }
+  .w-badge{ font-size:10.5px; color:var(--muted-2); margin-left:6px; }
+
+  footer{ text-align:center; color:var(--muted-2); font-size:12px; padding-top:20px; }
+  footer a{ color:var(--blue); text-decoration:none; }
+
+  @media (max-width: 900px){
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+    .rank-row{ grid-template-columns: 30px 1fr 90px; }
+    .rank-row .rank-proj, .rank-row .rank-bar-cell{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14H11L10 22L20 9H13L13 2Z" fill="#FFB100"/></svg>
+      </div>
+      <div>
+        <h1>Kinerja &amp; Ranking ULP</h1>
+        <p>UP3 Madiun &middot; Realisasi &amp; Prognosa</p>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div class="period-badge"><span class="dot-live" id="src-dot"></span>Data s.d. <b id="periode-label">—</b></div>
+      <div class="period-badge" id="src-badge" style="color:var(--muted-2)">Sumber: —</div>
+    </div>
+  </header>
+
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <section>
+    <div class="section-head">
+      <h2>Ranking ULP — NKO Bulan Berjalan</h2>
+      <span class="hint">Urut berdasar skor NKO tertinggi &middot; klik nama ULP untuk detail indikator</span>
+    </div>
+    <div class="panel rank-table" id="rank-table"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Tren &amp; Prognosa NKO (Jan&ndash;Des 2026)</h2>
+      <span class="hint">Garis putus-putus = proyeksi tren linear dari data aktual</span>
+    </div>
+    <div class="panel chart-panel">
+      <div class="legend-row" id="chart-legend"></div>
+      <canvas id="trendChart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Realisasi Bulanan per Indikator</h2>
+      <span class="hint">Pilih indikator untuk melihat tren bulanannya per ULP</span>
+    </div>
+    <div class="panel chart-panel">
+      <select id="ind-select" class="ind-select"></select>
+      <div class="legend-row" id="ind-chart-legend" style="margin-top:14px;"></div>
+      <canvas id="indTrendChart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2 id="heatmap-title">Detail Pencapaian per Indikator</h2>
+      <span class="hint" id="heatmap-hint">Semua ULP &middot; klik baris ranking di atas untuk fokus ke satu ULP</span>
+    </div>
+    <div class="panel heatmap-wrap">
+      <table class="heat" id="heat-table"></table>
+    </div>
+  </section>
+
+  <footer>
+    Dashboard statis &middot; data diperbarui manual melalui <span class="mono">data.js</span> &middot; dibangun untuk UP3 Madiun
+  </footer>
+</div>
+
+<script>
+let D = null;
+const ULP_COLORS = {
+  MDK:'#2E8BFF', MGT:'#34D399', NGW:'#FFB100', MPT:'#F87171',
+  CRB:'#A78BFA', DLP:'#22D3EE', MTN:'#FB923C', UP3:'#7C93B3'
+};
+const MONTHS_FULL = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const ULP_META = KINERJA_DATA.ulp; // nama & kode ULP tidak berubah, dipakai sebagai referensi
+let focusedUlp = null; // null = semua
+
+// ---------- Ambil data dari Google Sheets (CSV publish-to-web), fallback ke data.js ----------
+async function fetchCsv(url){
+  const res = await fetch(url, {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const text = await res.text();
+  return Papa.parse(text, {header:true, skipEmptyLines:true}).data;
+}
+
+function buildDataFromCSV(nkoRows, indRows){
+  const codes = ULP_META.map(u=>u.kode);
+  const monthsOrder = MONTHS_FULL;
+  const nko_trend = {}; codes.concat(['UP3']).forEach(c => nko_trend[c] = []);
+  const bulan_aktual = [];
+
+  monthsOrder.forEach(m=>{
+    const row = nkoRows.find(r => (r.BULAN||'').trim().toUpperCase() === m);
+    if(!row) return;
+    const up3Val = row.UP3;
+    if(up3Val === undefined || up3Val === null || String(up3Val).trim() === '') return; // bulan belum ada data
+    bulan_aktual.push(m);
+    codes.concat(['UP3']).forEach(c=>{
+      const raw = row[c];
+      nko_trend[c].push(raw === '' || raw === undefined ? null : parseFloat(raw));
+    });
+  });
+  if(bulan_aktual.length === 0) throw new Error('Sheet NKO kosong / belum ada bulan terisi');
+
+  // INDIKATOR sheet sekarang berformat panjang: 1 blok baris per BULAN (sama seperti NKO).
+  // Kelompokkan dulu per bulan, sambil menjaga urutan baris asli di tiap blok.
+  const indByMonth = {};
+  indRows.forEach(r=>{
+    const m = (r.BULAN||'').trim().toUpperCase();
+    if(!m) return;
+    (indByMonth[m] = indByMonth[m] || []).push(r);
+  });
+  // definisi indikator (NO/GROUP/NAMA/BOBOT) diambil dari blok bulan aktual terakhir yang tersedia
+  const defMonth = bulan_aktual.slice().reverse().find(m => indByMonth[m]) || Object.keys(indByMonth)[0];
+  const defRows = indByMonth[defMonth] || [];
+
+  const indikator = defRows.map((r, idx)=>{
+    const isGroup = String(r.GROUP).trim().toUpperCase() === 'TRUE';
+    const entry = {
+      no: r.NO === '' ? null : r.NO,
+      nama: (r.NAMA||'').trim(),
+      bobot: r.BOBOT === '' ? null : parseFloat(r.BOBOT),
+      group: isGroup
+    };
+    if(!isGroup){
+      entry.trend = {}; codes.forEach(c => entry.trend[c] = []);
+      bulan_aktual.forEach(m=>{
+        const rowsThisMonth = indByMonth[m] || [];
+        const row = rowsThisMonth[idx]; // baris pada posisi yang sama di tiap blok bulan
+        codes.forEach(c=>{
+          const raw = row ? row[c] : undefined;
+          entry.trend[c].push((raw === '' || raw === undefined || raw === null) ? null : parseFloat(raw));
+        });
+      });
+      entry.capaian = {};
+      codes.forEach(c=>{
+        const arr = entry.trend[c];
+        let v = null;
+        for(let i=arr.length-1; i>=0; i--){ if(arr[i] !== null && !isNaN(arr[i])){ v = arr[i]; break; } }
+        entry.capaian[c] = v;
+      });
+    }
+    return entry;
+  }).filter(e => e.nama);
+
+  return {
+    periode: bulan_aktual[bulan_aktual.length-1] + ' 2026',
+    bulan_aktual,
+    ulp: ULP_META,
+    nko_trend,
+    indikator
+  };
+}
+
+async function loadData(){
+  const hasConfig = typeof CONFIG !== 'undefined' && CONFIG.NKO_CSV_URL && CONFIG.INDIKATOR_CSV_URL;
+  if(hasConfig){
+    try{
+      const [nkoRows, indRows] = await Promise.all([
+        fetchCsv(CONFIG.NKO_CSV_URL),
+        fetchCsv(CONFIG.INDIKATOR_CSV_URL)
+      ]);
+      D = buildDataFromCSV(nkoRows, indRows);
+      setSourceBadge(true);
+      return;
+    }catch(err){
+      console.warn('Gagal memuat data dari Google Sheets, memakai data lokal (data.js). Detail:', err);
+    }
+  }
+  D = KINERJA_DATA;
+  setSourceBadge(false);
+}
+
+function setSourceBadge(isRemote){
+  const badge = document.getElementById('src-badge');
+  const dot = document.getElementById('src-dot');
+  if(isRemote){
+    badge.textContent = 'Sumber: Google Sheets (live)';
+    badge.style.color = 'var(--good)';
+    dot.style.background = 'var(--good)';
+  } else {
+    badge.textContent = 'Sumber: data.js (lokal)';
+    badge.style.color = 'var(--muted)';
+    dot.style.background = 'var(--muted-2)';
+  }
+}
+
+// ---------- helpers ----------
+function statusOf(score){
+  if(score >= 105) return {label:'Baik', cls:'status-baik', color:'var(--good)'};
+  if(score >= 98)  return {label:'Cukup', cls:'status-cukup', color:'var(--warn)'};
+  return {label:'Perlu Perhatian', cls:'status-masalah', color:'var(--bad)'};
+}
+function heatColor(v){
+  if(v === null || v === undefined || typeof v !== 'number') return {bg:'rgba(124,147,179,0.08)', fg:'var(--muted)'};
+  if(v >= 108) return {bg:'rgba(52,211,153,0.22)', fg:'#34D399'};
+  if(v >= 100) return {bg:'rgba(52,211,153,0.10)', fg:'#8FE3C4'};
+  if(v >= 90)  return {bg:'rgba(251,191,36,0.16)', fg:'#FBBF24'};
+  return {bg:'rgba(248,113,113,0.18)', fg:'#F87171'};
+}
+// linear regression forecast: given array of y (index 0..n-1), project to totalMonths
+function linregForecast(yArr, totalMonths){
+  const n = yArr.length;
+  const xs = yArr.map((_,i)=>i);
+  const xMean = xs.reduce((a,b)=>a+b,0)/n;
+  const yMean = yArr.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  for(let i=0;i<n;i++){ num += (xs[i]-xMean)*(yArr[i]-yMean); den += (xs[i]-xMean)**2; }
+  const slope = den===0 ? 0 : num/den;
+  const intercept = yMean - slope*xMean;
+  const out = [];
+  for(let i=0;i<totalMonths;i++){ out.push(+(intercept + slope*i).toFixed(2)); }
+  return out;
+}
+
+// ---------- KPI cards ----------
+function renderKPI(){
+  const codes = D.ulp.map(u=>u.kode);
+  const latestIdx = D.bulan_aktual.length - 1;
+  const scores = codes.map(c => ({code:c, nama:D.ulp.find(u=>u.kode===c).nama, val: D.nko_trend[c][latestIdx]}));
+  scores.sort((a,b)=>b.val - a.val);
+  const top = scores[0], bottom = scores[scores.length-1];
+  const up3Now = D.nko_trend.UP3[latestIdx];
+  const up3Prev = latestIdx>0 ? D.nko_trend.UP3[latestIdx-1] : up3Now;
+  const delta = +(up3Now - up3Prev).toFixed(2);
+  const avgAll = +(scores.reduce((a,b)=>a+b.val,0)/scores.length).toFixed(2);
+
+  const cards = [
+    {accent:'var(--blue)', label:'NKO UP3 Madiun', value: up3Now.toFixed(2), sub: `${delta>=0?'▲':'▼'} <b class="${delta<0?'down':''}">${Math.abs(delta).toFixed(2)}</b> vs bulan lalu`},
+    {accent:'var(--amber)', label:'Peringkat 1', value: top.val.toFixed(2), unit: top.nama, sub:`ULP dengan NKO tertinggi`},
+    {accent:'var(--bad)', label:'Perlu Perhatian', value: bottom.val.toFixed(2), unit: bottom.nama, sub:`ULP dengan NKO terendah`},
+    {accent:'var(--good)', label:'Rata-rata 7 ULP', value: avgAll.toFixed(2), sub:`Periode ${D.periode}`},
+  ];
+  document.getElementById('kpi-grid').innerHTML = cards.map(c=>`
+    <div class="kpi" style="--accent:${c.accent}">
+      <div class="k-label">${c.label}</div>
+      <div class="k-value">${c.value}${c.unit?`<small>${c.unit}</small>`:''}</div>
+      <div class="k-sub">${c.sub}</div>
+    </div>`).join('');
+}
+
+// ---------- Ranking table ----------
+function renderRanking(){
+  const codes = D.ulp.map(u=>u.kode);
+  const latestIdx = D.bulan_aktual.length - 1;
+  const totalMonths = 12;
+  const rows = codes.map(code=>{
+    const nama = D.ulp.find(u=>u.kode===code).nama;
+    const series = D.nko_trend[code];
+    const forecast = linregForecast(series, totalMonths);
+    return { code, nama, current: series[latestIdx], forecastDec: forecast[11] };
+  });
+  rows.sort((a,b)=>b.current - a.current);
+  const maxVal = Math.max(...rows.map(r=>r.current), 110);
+
+  let html = `<div class="rank-row head">
+    <div>#</div><div>ULP</div><div>Skor NKO</div><div>Level</div><div>Status</div><div style="text-align:right">Proyeksi Des</div>
+  </div>`;
+
+  rows.forEach((r,i)=>{
+    const st = statusOf(r.current);
+    const pct = Math.min(100, (r.current/maxVal)*100);
+    const color = ULP_COLORS[r.code];
+    html += `<div class="rank-row" data-code="${r.code}">
+      <div class="rank-num ${i===0?'top1':''}">${i+1}</div>
+      <div class="rank-name" data-code="${r.code}"><b>${r.nama}</b><span>${r.code}</span></div>
+      <div class="rank-score" style="color:${color}">${r.current.toFixed(2)}</div>
+      <div class="rank-bar-cell"><div class="voltbar-track"><div class="voltbar-fill" style="width:${pct}%; background:${color}"></div></div></div>
+      <div class="status-pill ${st.cls}">${st.label}</div>
+      <div class="rank-proj proj-val">→ <b>${r.forecastDec.toFixed(2)}</b></div>
+    </div>`;
+  });
+  document.getElementById('rank-table').innerHTML = html;
+
+  document.querySelectorAll('.rank-name').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const code = el.getAttribute('data-code');
+      focusedUlp = (focusedUlp === code) ? null : code;
+      renderHeatmap();
+      updateChartFocus();
+    });
+  });
+}
+
+// ---------- Trend chart with forecast ----------
+let chartInstance = null;
+function renderChart(){
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const nActual = D.bulan_aktual.length;
+  const labels = MONTHS_FULL.slice(0, 12);
+  const codes = [...D.ulp.map(u=>u.kode), 'UP3'];
+
+  const datasets = [];
+  codes.forEach(code=>{
+    const series = D.nko_trend[code];
+    const forecast = linregForecast(series, 12);
+    const color = ULP_COLORS[code];
+    const isUP3 = code === 'UP3';
+    // actual (solid)
+    const actualData = labels.map((_,i)=> i < nActual ? series[i] : null);
+    // forecast (dashed) — connect from last actual point
+    const forecastData = labels.map((_,i)=> i >= nActual-1 ? forecast[i] : null);
+    datasets.push({
+      label: code, code,
+      data: actualData, borderColor: color, backgroundColor: color,
+      borderWidth: isUP3?3:2, pointRadius: isUP3?3:2, tension:0.3,
+      hidden:false
+    });
+    datasets.push({
+      label: code+'_forecast', code, isForecast:true,
+      data: forecastData, borderColor: color, backgroundColor: 'transparent',
+      borderWidth: isUP3?3:1.5, pointRadius:0, borderDash:[5,4], tension:0.3,
+      hidden:false
+    });
+  });
+
+  chartInstance = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'nearest', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          filter: (item)=> !item.dataset.isForecast || item.parsed.y !== null,
+          callbacks:{
+            title: (items)=> items[0].label,
+            label: (item)=>{
+              const suffix = item.dataset.isForecast ? ' (proyeksi)' : '';
+              return `${item.dataset.code}${suffix}: ${item.parsed.y?.toFixed?.(2) ?? item.parsed.y}`;
+            }
+          },
+          backgroundColor:'#0D1A2E', borderColor:'#1E3050', borderWidth:1,
+          titleColor:'#EAF1FB', bodyColor:'#EAF1FB', padding:10
+        }
+      },
+      scales:{
+        x:{ grid:{ color:'rgba(124,147,179,0.08)' }, ticks:{ color:'#7C93B3', font:{size:11} } },
+        y:{ grid:{ color:'rgba(124,147,179,0.08)' }, ticks:{ color:'#7C93B3', font:{size:11} }, suggestedMin:55, suggestedMax:115 }
+      }
+    }
+  });
+
+  // legend
+  document.getElementById('chart-legend').innerHTML = codes.map(code=>{
+    const nm = code==='UP3' ? 'UP3 MADIUN' : D.ulp.find(u=>u.kode===code).nama;
+    return `<div class="legend-item" data-code="${code}"><span class="sw" style="background:${ULP_COLORS[code]}"></span>${nm}</div>`;
+  }).join('');
+  document.querySelectorAll('.legend-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const code = el.getAttribute('data-code');
+      const items = chartInstance.data.datasets.filter(d=>d.code===code);
+      const nowHidden = !items[0].hidden;
+      items.forEach(d=>{ d.hidden = nowHidden; });
+      el.classList.toggle('off', nowHidden);
+      chartInstance.update();
+    });
+  });
+}
+function updateChartFocus(){
+  if(!chartInstance) return;
+  const allCodes = [...D.ulp.map(u=>u.kode), 'UP3'];
+  chartInstance.data.datasets.forEach(d=>{
+    d.hidden = focusedUlp ? (d.code !== focusedUlp) : false;
+  });
+  chartInstance.update();
+  document.querySelectorAll('.legend-item').forEach(el=>{
+    const code = el.getAttribute('data-code');
+    el.classList.toggle('off', !!focusedUlp && code !== focusedUlp);
+  });
+}
+
+// ---------- Tren bulanan per indikator ----------
+let indChartInstance = null;
+function getNonGroupIndikator(){ return D.indikator.filter(i=>!i.group); }
+
+function populateIndikatorSelect(){
+  const sel = document.getElementById('ind-select');
+  const opts = getNonGroupIndikator();
+  sel.innerHTML = opts.map((ind,idx)=>`<option value="${idx}">${ind.no ? ind.no+'. ' : ''}${ind.nama}</option>`).join('');
+  sel.onchange = renderIndikatorTrend;
+}
+
+function renderIndikatorTrend(){
+  const opts = getNonGroupIndikator();
+  const sel = document.getElementById('ind-select');
+  const ind = opts[parseInt(sel.value || 0, 10)];
+  if(!ind) return;
+
+  const nActual = D.bulan_aktual.length;
+  const labels = MONTHS_FULL.slice(0, 12);
+  const codes = D.ulp.map(u=>u.kode);
+
+  const datasets = codes.map(code=>{
+    const series = ind.trend[code] || [];
+    const color = ULP_COLORS[code];
+    const data = labels.map((_,i)=> (i < nActual && series[i] !== null && series[i] !== undefined) ? series[i] : null);
+    return {
+      label: code, code,
+      data, borderColor: color, backgroundColor: color,
+      borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true, hidden: false
+    };
+  });
+
+  if(indChartInstance) indChartInstance.destroy();
+  const ctx = document.getElementById('indTrendChart').getContext('2d');
+  indChartInstance = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'nearest', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          callbacks:{
+            title:(items)=> items[0].label,
+            label:(item)=> `${item.dataset.code}: ${item.parsed.y?.toFixed?.(2) ?? '—'}`
+          },
+          backgroundColor:'#0D1A2E', borderColor:'#1E3050', borderWidth:1,
+          titleColor:'#EAF1FB', bodyColor:'#EAF1FB', padding:10
+        }
+      },
+      scales:{
+        x:{ grid:{ color:'rgba(124,147,179,0.08)' }, ticks:{ color:'#7C93B3', font:{size:11} } },
+        y:{ grid:{ color:'rgba(124,147,179,0.08)' }, ticks:{ color:'#7C93B3', font:{size:11} } }
+      }
+    }
+  });
+
+  document.getElementById('ind-chart-legend').innerHTML = codes.map(code=>{
+    const nm = D.ulp.find(u=>u.kode===code).nama;
+    return `<div class="legend-item" data-code="${code}"><span class="sw" style="background:${ULP_COLORS[code]}"></span>${nm}</div>`;
+  }).join('');
+  document.querySelectorAll('#ind-chart-legend .legend-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const code = el.getAttribute('data-code');
+      const d = indChartInstance.data.datasets.find(d=>d.code===code);
+      d.hidden = !d.hidden;
+      el.classList.toggle('off', d.hidden);
+      indChartInstance.update();
+    });
+  });
+}
+
+// ---------- Heatmap ----------
+function renderHeatmap(){
+  const codes = focusedUlp ? [focusedUlp] : D.ulp.map(u=>u.kode);
+  document.getElementById('heatmap-hint').textContent = focusedUlp
+    ? `Menampilkan ${D.ulp.find(u=>u.kode===focusedUlp).nama} — klik lagi namanya di ranking untuk kembali ke semua ULP`
+    : 'Semua ULP · klik nama ULP di ranking untuk fokus ke satu ULP';
+
+  let thead = `<tr><th class="ind-col">Indikator</th>${codes.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+  let rows = '';
+  D.indikator.forEach(ind=>{
+    if(ind.group){
+      rows += `<tr class="group-row"><td class="ind-col" colspan="${codes.length+1}">${ind.no ? ind.no+'. ' : ''}${ind.nama}</td></tr>`;
+    } else {
+      const cells = codes.map(c=>{
+        const v = ind.capaian[c];
+        const hc = heatColor(v);
+        const disp = (typeof v === 'number') ? v.toFixed(1) : (v ?? '—');
+        return `<td><span class="heat-cell" style="background:${hc.bg}; color:${hc.fg}">${disp}</span></td>`;
+      }).join('');
+      rows += `<tr><td class="ind-col">${ind.nama}${ind.bobot?`<span class="w-badge">bobot ${ind.bobot}</span>`:''}</td>${cells}</tr>`;
+    }
+  });
+  document.getElementById('heat-table').innerHTML = thead + rows;
+}
+
+(async function init(){
+  await loadData();
+  document.getElementById('periode-label').textContent = D.periode;
+  renderKPI();
+  renderRanking();
+  renderChart();
+  populateIndikatorSelect();
+  renderIndikatorTrend();
+  renderHeatmap();
+})();
+</script>
+</body>
+</html>
