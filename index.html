@@ -247,7 +247,32 @@ async function fetchCsv(url){
   return Papa.parse(text, {header:true, skipEmptyLines:true}).data;
 }
 
-function buildDataFromCSV(nkoRows, indRows){
+// Normalisasi baris CSV: trim nama kolom & samakan ke uppercase supaya tahan terhadap
+// spasi tambahan / perbedaan huruf besar-kecil pada header hasil publish Google Sheets.
+// Konversi angka dari CSV dengan aman: buang koma pemisah ribuan (mis. "81,226.00" -> 81226.00)
+// supaya tidak terpotong oleh parseFloat, dan kembalikan null untuk sel kosong/tidak valid.
+function toNum(raw){
+  if(raw === '' || raw === undefined || raw === null) return null;
+  const cleaned = String(raw).replace(/,/g, '').trim();
+  if(cleaned === '') return null;
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+
+function normalizeRow(r){
+  const out = {};
+  Object.keys(r).forEach(k=>{
+    const key = (k||'').trim().toUpperCase();
+    let v = r[k];
+    if(typeof v === 'string') v = v.trim();
+    out[key] = v;
+  });
+  return out;
+}
+
+function buildDataFromCSV(nkoRowsRaw, indRowsRaw){
+  const nkoRows = nkoRowsRaw.map(normalizeRow);
+  const indRows = indRowsRaw.map(normalizeRow);
   const codes = ULP_META.map(u=>u.kode);
   const monthsOrder = MONTHS_FULL;
   const nko_trend = {}; codes.concat(['UP3']).forEach(c => nko_trend[c] = []);
@@ -261,7 +286,7 @@ function buildDataFromCSV(nkoRows, indRows){
     bulan_aktual.push(m);
     codes.concat(['UP3']).forEach(c=>{
       const raw = row[c];
-      nko_trend[c].push(raw === '' || raw === undefined ? null : parseFloat(raw));
+      nko_trend[c].push(toNum(raw));
     });
   });
   if(bulan_aktual.length === 0) throw new Error('Sheet NKO kosong / belum ada bulan terisi');
@@ -283,7 +308,7 @@ function buildDataFromCSV(nkoRows, indRows){
     const entry = {
       no: r.NO === '' ? null : r.NO,
       nama: (r.NAMA||'').trim(),
-      bobot: r.BOBOT === '' ? null : parseFloat(r.BOBOT),
+      bobot: toNum(r.BOBOT),
       group: isGroup
     };
     if(!isGroup){
@@ -293,7 +318,7 @@ function buildDataFromCSV(nkoRows, indRows){
         const row = rowsThisMonth[idx]; // baris pada posisi yang sama di tiap blok bulan
         codes.forEach(c=>{
           const raw = row ? row[c] : undefined;
-          entry.trend[c].push((raw === '' || raw === undefined || raw === null) ? null : parseFloat(raw));
+          entry.trend[c].push(toNum(raw));
         });
       });
       entry.capaian = {};
@@ -306,6 +331,10 @@ function buildDataFromCSV(nkoRows, indRows){
     }
     return entry;
   }).filter(e => e.nama);
+
+  if(indikator.length === 0){
+    throw new Error('Sheet INDIKATOR tidak terbaca (cek kolom BULAN/NO/GROUP/NAMA/BOBOT & link publish-to-web-nya)');
+  }
 
   return {
     periode: bulan_aktual[bulan_aktual.length-1] + ' 2026',
@@ -541,12 +570,23 @@ function getNonGroupIndikator(){ return D.indikator.filter(i=>!i.group); }
 function populateIndikatorSelect(){
   const sel = document.getElementById('ind-select');
   const opts = getNonGroupIndikator();
+  if(opts.length === 0){
+    sel.innerHTML = `<option>Data indikator tidak tersedia</option>`;
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
   sel.innerHTML = opts.map((ind,idx)=>`<option value="${idx}">${ind.no ? ind.no+'. ' : ''}${ind.nama}</option>`).join('');
   sel.onchange = renderIndikatorTrend;
 }
 
 function renderIndikatorTrend(){
   const opts = getNonGroupIndikator();
+  if(opts.length === 0){
+    if(indChartInstance){ indChartInstance.destroy(); indChartInstance = null; }
+    document.getElementById('ind-chart-legend').innerHTML = '';
+    return;
+  }
   const sel = document.getElementById('ind-select');
   const ind = opts[parseInt(sel.value || 0, 10)];
   if(!ind) return;
