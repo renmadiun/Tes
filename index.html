@@ -675,12 +675,18 @@ function renderHeatmap(){
 (async function init(){
   await loadData();
   document.getElementById('periode-label').textContent = D.periode;
-  renderKPI();
-  renderRanking();
-  renderChart();
-  populateIndikatorSelect();
-  renderIndikatorTrend();
-  renderHeatmap();
+
+  function safeRun(name, fn){
+    try{ fn(); }
+    catch(err){ console.error('[dashboard] gagal render "'+name+'":', err); }
+  }
+
+  safeRun('KPI', renderKPI);
+  safeRun('Ranking', renderRanking);
+  safeRun('Chart NKO', renderChart);
+  safeRun('Indikator Select', populateIndikatorSelect);
+  safeRun('Indikator Trend', renderIndikatorTrend);
+  safeRun('Heatmap', renderHeatmap);
 })();
 </script>
 </body>
