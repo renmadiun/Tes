@@ -6,23 +6,37 @@
 <title>Kinerja ULP — UP3 Madiun</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<script>
-  // Fallback: kalau CDN utama Chart.js gagal ter-load (diblokir firewall/ad-blocker/dll),
-  // otomatis coba CDN cadangan (jsDelivr) sebelum lanjut ke script berikutnya.
-  if (typeof Chart === 'undefined') {
-    document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
-  }
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script>
-  // Fallback yang sama untuk PapaParse.
-  if (typeof Papa === 'undefined') {
-    document.write('<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"><\/script>');
-  }
-</script>
 <script src="config.js"></script>
 <script src="data.js"></script>
+<script>
+  // Muat Chart.js & PapaParse dengan CDN cadangan otomatis, tanpa document.write
+  // (document.write memicu peringatan Chrome untuk koneksi lambat/tidak stabil).
+  function loadScript(url){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  async function loadWithFallback(urls){
+    for(const url of urls){
+      try { await loadScript(url); return true; } catch(e){ /* coba url berikutnya */ }
+    }
+    return false;
+  }
+  window.__libsReady = Promise.all([
+    loadWithFallback([
+      'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
+      'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js'
+    ]),
+    loadWithFallback([
+      'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js',
+      'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js'
+    ])
+  ]);
+</script>
 <style>
   :root{
     --bg:#0A1524;
@@ -686,6 +700,7 @@ function renderHeatmap(){
 }
 
 (async function init(){
+  await window.__libsReady;
   await loadData();
   document.getElementById('periode-label').textContent = D.periode;
 
