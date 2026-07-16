@@ -187,10 +187,84 @@
     .rank-row{ grid-template-columns: 30px 1fr 90px; }
     .rank-row .rank-proj, .rank-row .rank-bar-cell{ display:none; }
   }
+  /* ---------- Tab navigation ---------- */
+  .tabbar{
+    display:flex; gap:8px; margin-bottom:18px;
+    border-bottom:1px solid var(--line); padding-bottom:0;
+  }
+  .tab-btn{
+    background:none; border:none; color:var(--muted);
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px;
+    padding:10px 18px; cursor:pointer; border-bottom:2px solid transparent;
+    transition:color .15s, border-color .15s;
+  }
+  .tab-btn:hover{ color:var(--text); }
+  .tab-btn.active{ color:var(--blue); border-bottom-color:var(--blue); }
+
+  /* ---------- Dashboard Kinerja (UP3 infographic) ---------- */
+  .kj-header{
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:14px; margin-bottom:22px;
+  }
+  .kj-brand{ display:flex; align-items:center; gap:14px; }
+  .kj-brand-mark{
+    width:44px; height:44px; border-radius:12px;
+    background:linear-gradient(135deg,#0F2A4A,#163A63);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+  }
+  .kj-brand-mark svg{ width:22px; height:22px; }
+  #kj-title{ font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--text); margin:0; }
+  #kj-period{ font-size:12px; color:var(--muted); margin:2px 0 0; }
+  .kj-summary{ display:flex; gap:10px; flex-wrap:wrap; }
+  .kj-sum-pill{
+    display:flex; align-items:center; gap:7px; padding:8px 14px; border-radius:10px;
+    background:var(--panel-2); border:1px solid var(--line); font-size:12.5px; color:var(--muted);
+  }
+  .kj-sum-pill b{ font-family:'IBM Plex Mono',monospace; font-size:14px; }
+  .kj-sum-pill .dot{ width:8px; height:8px; border-radius:50%; }
+
+  .kj-grid{
+    column-count:4; column-gap:16px;
+  }
+  @media (max-width:1200px){ .kj-grid{ column-count:3; } }
+  @media (max-width:860px){ .kj-grid{ column-count:2; } }
+  @media (max-width:560px){ .kj-grid{ column-count:1; } }
+
+  .kj-block{
+    break-inside:avoid; margin-bottom:16px;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px; display:flex; gap:13px;
+  }
+  .kj-icon{
+    flex:0 0 40px; width:40px; height:40px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.06) inset;
+  }
+  .kj-icon svg{ width:20px; height:20px; }
+  .kj-rows{ flex:1; min-width:0; display:flex; flex-direction:column; gap:11px; }
+  .kj-row-label{
+    font-size:12.5px; color:var(--text); font-weight:600; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap;
+  }
+  .kj-row-label .kj-unit{ font-size:10.5px; color:var(--muted); font-weight:500; }
+  .kj-row-meta{ display:flex; align-items:center; gap:9px; margin-top:3px; }
+  .kj-pct{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
+  .kj-arrow{ font-size:12px; line-height:1; }
+  .kj-vals{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted-2); }
+  .kj-vals b{ color:var(--muted); font-weight:500; }
+  .kj-label-only{
+    font-size:12.5px; color:var(--text); font-weight:600; align-self:center;
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="ranking">Ranking &amp; Tren ULP</button>
+    <button class="tab-btn" data-tab="kinerja">Dashboard Kinerja</button>
+  </div>
+
+  <div id="view-ranking">
 
   <header>
     <div class="brand">
@@ -254,6 +328,28 @@
   <footer>
     Dashboard statis &middot; data diperbarui manual melalui <span class="mono">data.js</span> &middot; dibangun untuk UP3 Madiun
   </footer>
+
+  </div>
+
+  <div id="view-kinerja" style="display:none">
+    <div class="kj-header">
+      <div class="kj-brand">
+        <div class="kj-brand-mark">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14H11L10 22L20 9H13L13 2Z" fill="#FFB100"/></svg>
+        </div>
+        <div>
+          <h1 id="kj-title">Dashboard Kinerja</h1>
+          <p id="kj-period">UP3 Madiun</p>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <select id="kj-month" class="ind-select" style="width:auto; min-width:150px;"></select>
+        <div class="kj-summary" id="kj-summary"></div>
+      </div>
+    </div>
+    <div class="kj-grid" id="kj-grid"></div>
+  </div>
+
 </div>
 
 <script>
@@ -264,6 +360,1799 @@ const ULP_COLORS = {
 };
 const MONTHS_FULL = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const ULP_META = KINERJA_DATA.ulp; // nama & kode ULP tidak berubah, dipakai sebagai referensi
+
+const UP3_DATA_FALLBACK = {
+  "months": [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC"
+  ],
+  "blocks": [
+    {
+      "icon": "bulb",
+      "items": [
+        {
+          "label": "Penjualan TL",
+          "unit": "GWh",
+          "pol": 3.0,
+          "target": [
+            8.250821414,
+            15.90467378,
+            24.19680414,
+            31.77096315,
+            40.36029855,
+            48.62939825,
+            57.13611577,
+            65.60883566,
+            73.99930323,
+            83.1007964,
+            91.76982515,
+            100.2652101
+          ],
+          "real": [
+            2.975639757,
+            1.011881757,
+            15.58127324,
+            17.44667456,
+            24.22232979,
+            39.07306153,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            74.42590796,
+            62.54486642,
+            85.7575722,
+            81.96555953,
+            84.00609576,
+            92.13945714,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "drop",
+      "items": [
+        {
+          "label": "Susut tnp Emin",
+          "unit": "%",
+          "pol": 1.0,
+          "target": [
+            7.624000001,
+            7.6,
+            7.576,
+            7.566000001,
+            7.557999999,
+            7.552,
+            7.535,
+            7.518,
+            7.501000002,
+            7.483999999,
+            7.467000003,
+            7.449999998
+          ],
+          "real": [
+            6.69,
+            6.65,
+            7.07,
+            7.41,
+            7.43,
+            7.28,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            106.6789863,
+            102.0618557,
+            101.6935697,
+            103.6016949,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "tower",
+      "items": [
+        {
+          "label": "SAIDI",
+          "unit": "menit/plg",
+          "pol": 1.0,
+          "target": [
+            4.444400768,
+            8.458711514,
+            12.90312809,
+            17.11315122,
+            21.53406826,
+            25.81242502,
+            30.0601948,
+            34.45586844,
+            38.70975656,
+            42.99238753,
+            47.2350979,
+            51.61917512
+          ],
+          "real": [
+            2.609131388,
+            6.243491904,
+            12.71059877,
+            16.76790186,
+            21.37790423,
+            22.71804828,
+            25.22608038,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            101.4921135,
+            102.0174505,
+            100.7251952,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        },
+        {
+          "label": "SAIFI",
+          "unit": "kali/plg",
+          "pol": 1.0,
+          "target": [
+            0.07837653325,
+            0.1491684561,
+            0.2275452347,
+            0.3017884931,
+            0.3797507885,
+            0.4551989848,
+            0.5301077376,
+            0.6076247688,
+            0.6826413907,
+            0.7581647166,
+            0.8329842386,
+            0.9102968292
+          ],
+          "real": [
+            0.05975154029,
+            0.1285830544,
+            0.2235815399,
+            0.297474187,
+            0.3772769953,
+            0.4009932288,
+            0.4463286183,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            101.7419371,
+            101.4295794,
+            100.6514254,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        },
+        {
+          "label": "ENS",
+          "unit": "MWh",
+          "pol": 1.0,
+          "target": [
+            8.825354479,
+            16.79664239,
+            26.87535996,
+            50.0849302,
+            63.02353717,
+            75.54476972,
+            87.97659122,
+            100.8410928,
+            113.2906104,
+            125.8242202,
+            138.241084,
+            151.0718433
+          ],
+          "real": [
+            4.84,
+            12.937,
+            26.822,
+            48.957,
+            62.662,
+            65.811,
+            72.667,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            100.198546,
+            102.2520351,
+            100.5736542,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "bolt",
+      "items": [
+        {
+          "label": "Eksekusi RUPTL",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            100,
+            100,
+            100,
+            100,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Fisik Investasi",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "real": [
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "mobile",
+      "items": [
+        {
+          "label": "Delta Plg",
+          "unit": "plg",
+          "pol": 3.0,
+          "target": [
+            2481,
+            4903,
+            7030,
+            9140,
+            11927,
+            14657,
+            17213,
+            19617,
+            22078,
+            25363,
+            29282,
+            34070
+          ],
+          "real": [
+            2451,
+            4378,
+            6026,
+            8410,
+            10980,
+            14706,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            98.79081016,
+            89.29227004,
+            85.71834993,
+            92.0131291,
+            92.06003186,
+            100.3343113,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Delta Daya",
+          "unit": "MVA",
+          "pol": null,
+          "target": [
+            3.63057472,
+            10.11524602,
+            15.96543926,
+            21.77873636,
+            29.37454252,
+            36.84799854,
+            43.95407811,
+            50.4002844,
+            56.96189916,
+            66.002004,
+            76.69974106,
+            84.15611245
+          ],
+          "real": [
+            8.459794,
+            20.269794,
+            27.689794,
+            37.009794,
+            47.785485,
+            60.582975,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Biaya Penyambungan",
+          "unit": "Rp Miliar",
+          "pol": 3.0,
+          "target": [
+            10.795,
+            21.4604,
+            31.1584,
+            43.8824,
+            56.05788519,
+            69.03674811,
+            80.06698218,
+            94.23126463,
+            106.4922341,
+            120.4617961,
+            134.5964227,
+            153.4154227
+          ],
+          "real": [
+            7.35958485,
+            17.15,
+            23.43,
+            35.9574723,
+            45.81543615,
+            56.9018338,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            68.17586707,
+            79.91463346,
+            75.19641573,
+            81.94053265,
+            81.72879871,
+            82.4225291,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Delta Plg Lisdes",
+          "unit": "plg",
+          "pol": 3.0,
+          "target": [
+            0,
+            0,
+            0,
+            5,
+            10,
+            16,
+            24,
+            32,
+            41,
+            49,
+            49,
+            49
+          ],
+          "real": [
+            0.0,
+            0.0,
+            0.0,
+            23.0,
+            43,
+            67,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Delta kWh Lisdes",
+          "unit": "kWh",
+          "pol": 3.0,
+          "target": [
+            0,
+            0,
+            0,
+            200.8854962,
+            609.3526718,
+            1220.182443,
+            2273.649618,
+            3769.754198,
+            5695.694656,
+            8067.325191,
+            10438.95573,
+            12810.59173
+          ],
+          "real": [
+            0.0,
+            0.0,
+            0.0,
+            200.8854962,
+            6494.3,
+            8561.7,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "woman",
+      "items": [
+        {
+          "label": "Rating Negatif Ggn",
+          "unit": "Kali",
+          "pol": 1.0,
+          "target": [
+            2,
+            4,
+            6,
+            7,
+            8,
+            9,
+            11,
+            13,
+            14,
+            16,
+            18,
+            20
+          ],
+          "real": [
+            0,
+            0,
+            0,
+            1,
+            3,
+            4,
+            9,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        },
+        {
+          "label": "RPT Ggn",
+          "unit": "Menit",
+          "pol": 1.0,
+          "target": [
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30,
+            30
+          ],
+          "real": [
+            20.31,
+            19.89,
+            19.85,
+            20.17,
+            20.7,
+            21.05,
+            21.43,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        },
+        {
+          "label": "Success Auto Dispatch",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03,
+            17.03
+          ],
+          "real": [
+            29.07144328,
+            26.88952281,
+            24.65020146,
+            25.18814998,
+            27.95000395,
+            29.72855721,
+            30.9989524,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Kali Trans PLN Mobile",
+          "unit": "kali",
+          "pol": 3.0,
+          "target": [
+            28.01479699,
+            55.65115022,
+            83.56436494,
+            117.3408021,
+            158.314974,
+            198.7646361,
+            237.2463906,
+            273.5544174,
+            312.3827467,
+            353.3721891,
+            392.7429545,
+            431.6323661
+          ],
+          "real": [
+            45.846,
+            84.574,
+            145.571,
+            215.913,
+            291.54,
+            368.46,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Rp Trans PLN Mobile",
+          "unit": "Rp Miliar",
+          "pol": null,
+          "target": [
+            6.302158966,
+            12.50566982,
+            18.76955547,
+            26.41181941,
+            35.73864812,
+            44.93071165,
+            53.67427665,
+            61.91705423,
+            70.74740801,
+            80.07154142,
+            89.01779325,
+            97.9748263
+          ],
+          "real": [
+            6.44145736,
+            13.77300846,
+            22.41002621,
+            31.21951103,
+            41.84186333,
+            52.2480128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            102.2103281,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "flash",
+      "items": [
+        {
+          "label": "Ggn TM",
+          "unit": "kali",
+          "pol": 1.0,
+          "target": [
+            184,
+            350,
+            535,
+            713,
+            897,
+            1075,
+            1259,
+            1443,
+            1621,
+            1806,
+            1984,
+            2168
+          ],
+          "real": [
+            110,
+            198,
+            316,
+            455,
+            535,
+            715,
+            733,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        },
+        {
+          "label": "Rusak Alat Dist",
+          "unit": "Unit",
+          "pol": 1.0,
+          "target": [
+            5,
+            10,
+            14,
+            19,
+            23,
+            27,
+            31,
+            36,
+            40,
+            44,
+            48,
+            52
+          ],
+          "real": [
+            3,
+            8,
+            11,
+            17,
+            20,
+            22,
+            22,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "worker",
+      "items": [
+        {
+          "label": "MVOD",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "MTTR Siaga 1",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "calc",
+      "items": [
+        {
+          "label": "Rata2 Tunggakan",
+          "unit": "Rp Juta",
+          "pol": 1.0,
+          "target": [
+            30.041308,
+            30.041309,
+            30.04131,
+            30.041311,
+            30.041312,
+            30.041313,
+            30.041314,
+            30.041315,
+            30.041316,
+            30.041317,
+            30.041318,
+            30.041319
+          ],
+          "real": [
+            6.348011,
+            7.613754,
+            8.480106333,
+            11.39371125,
+            9.7275218,
+            8.106268167,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        },
+        {
+          "label": "Pelunasan PRR",
+          "unit": "Rp Juta",
+          "pol": 3.0,
+          "target": [
+            0,
+            0,
+            188.882404,
+            252.51027,
+            316.086827,
+            379.663381,
+            474.592055,
+            569.520729,
+            664.449402,
+            759.378076,
+            854.255436,
+            949.18411
+          ],
+          "real": [
+            26.311291,
+            492.28508,
+            518.997066,
+            1235.059361,
+            1256.815656,
+            1275.309067,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            100.0,
+            100.0,
+            110,
+            110,
+            110,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Usulan PRR",
+          "unit": "Rp Miliar",
+          "pol": 3.0,
+          "target": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.008310018,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "money",
+      "items": [
+        {
+          "label": "Penyerapan AI",
+          "unit": "%",
+          "pol": 2.0,
+          "target": [
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100",
+            "95-100"
+          ],
+          "real": [
+            100.0,
+            100.0,
+            83.41,
+            78.04,
+            100.51,
+            104.65,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            110,
+            110,
+            87.8,
+            82.14736842,
+            99.46315789,
+            109.65,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Hapus ATTB",
+          "unit": "Rp Juta",
+          "pol": 3.0,
+          "target": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            829.4,
+            829.4,
+            829.4,
+            2574,
+            2574,
+            2574,
+            2574
+          ],
+          "real": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2799.876894,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            110,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Pengendalian NAC",
+          "unit": "Rp Juta",
+          "pol": 1.0,
+          "target": [
+            936.7367611,
+            2648.854654,
+            5197.541444,
+            6307.343521,
+            7078.568139,
+            12071.40824,
+            13172.55327,
+            15414.16971,
+            16141.18456,
+            17875.38291,
+            18773.40196,
+            22266.13616
+          ],
+          "real": [
+            null,
+            null,
+            null,
+            null,
+            6783.590834,
+            6783.590834,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            104.1671889,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "meter",
+      "items": [
+        {
+          "label": "Perolehan P2TL",
+          "unit": "kWh",
+          "pol": 3.0,
+          "target": [
+            892857,
+            1696428,
+            2455357,
+            3392857,
+            4107143,
+            5000000,
+            5898438,
+            6640625,
+            7500000,
+            8359375,
+            9179688,
+            10000001
+          ],
+          "real": [
+            459652,
+            916763,
+            1428322,
+            2201881,
+            3387225,
+            4429994,
+            4800056,
+            4800056,
+            4800056,
+            4800056,
+            4800056,
+            4800056
+          ],
+          "pencapaian": [
+            51.48103224,
+            54.04078452,
+            58.17166302,
+            64.897548,
+            82.47156235,
+            88.59988,
+            81.37842595,
+            72.28319624,
+            64.00074667,
+            57.42123065,
+            52.2899689,
+            48.0005552
+          ]
+        },
+        {
+          "label": "Ganti Meter",
+          "unit": "Unit",
+          "pol": 3.0,
+          "target": [
+            819,
+            1638,
+            2457,
+            4095,
+            5733,
+            7371,
+            8750,
+            10129,
+            11507,
+            12098,
+            12689,
+            13280
+          ],
+          "real": [
+            1281,
+            3251,
+            4768,
+            6521,
+            8584,
+            10905,
+            10905,
+            10905,
+            10905,
+            10905,
+            10905,
+            10905
+          ],
+          "pencapaian": [
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            110,
+            107.6611709,
+            94.76840184,
+            90.13886593,
+            85.94057845,
+            82.11596386
+          ]
+        },
+        {
+          "label": "Tindak Lanjut LBKB",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "app",
+      "items": [
+        {
+          "label": "Pengembangan Aset",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            101.67,
+            101.67,
+            101.51,
+            101.58,
+            98.43,
+            104.41,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "pencapaian": [
+            101.67,
+            101.67,
+            101.51,
+            101.58,
+            98.43,
+            104.41,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "Efektifitas Har",
+          "unit": "%",
+          "pol": 3.0,
+          "target": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ],
+          "real": [
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "pencapaian": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+          ]
+        }
+      ]
+    },
+    {
+      "icon": "person",
+      "items": [
+        {
+          "label": "Kepatuhan, Matlev & Tata Kelola",
+          "unit": null,
+          "pol": null,
+          "target": null,
+          "real": null,
+          "pencapaian": null
+        }
+      ]
+    }
+  ]
+};
+
+let up3LiveData = null; // diisi kalau CSV UP3 dari Google Sheets berhasil dimuat
+let kjSelectedMonth = 5; // default: index bulan terakhir yang ada realisasinya (0=Jan)
+
+const KJ_ICONS = {
+  bulb:   { color:'#FFB100', bg:'rgba(255,177,0,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#FFB100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a6 6 0 0 0-3.5 10.9c.5.4.8 1 .9 1.6l.1.5h5l.1-.5c.1-.6.4-1.2.9-1.6A6 6 0 0 0 12 2Z"/></svg>' },
+  drop:   { color:'#2E8BFF', bg:'rgba(46,139,255,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#2E8BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 7.5 7 12.5A7 7 0 0 1 5 14.5C5 9.5 12 2 12 2Z"/></svg>' },
+  tower:  { color:'#34D399', bg:'rgba(52,211,153,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 22M12 2l7 20M8 10h8M6.5 16h11"/></svg>' },
+  bolt:   { color:'#34D399', bg:'rgba(52,211,153,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>' },
+  mobile: { color:'#2E8BFF', bg:'rgba(46,139,255,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#2E8BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>' },
+  woman:  { color:'#A78BFA', bg:'rgba(167,139,250,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>' },
+  flash:  { color:'#FFB100', bg:'rgba(255,177,0,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#FFB100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l-1 8h4l-9 12 2-9H7l2-11Z"/></svg>' },
+  worker: { color:'#22D3EE', bg:'rgba(34,211,238,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-4 3.1-6.5 7-6.5S19 17 19 21"/></svg>' },
+  calc:   { color:'#2E8BFF', bg:'rgba(46,139,255,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#2E8BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01"/></svg>' },
+  money:  { color:'#FBBF24', bg:'rgba(251,191,36,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="12" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M6 7V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></svg>' },
+  meter:  { color:'#34D399', bg:'rgba(52,211,153,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13 15 9M9 5h6"/></svg>' },
+  app:    { color:'#34D399', bg:'rgba(52,211,153,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>' },
+  person: { color:'#22D3EE', bg:'rgba(34,211,238,0.15)', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-4 3.1-6.5 7-6.5S19 17 19 21"/><path d="m9.5 12.5 1.7 1.7 3.3-3.4"/></svg>' }
+};
+
+// Format angka gaya Indonesia (titik ribuan, koma desimal, 2 desimal)
+function idNum(v){
+  if(v === null || v === undefined || typeof v !== 'number' || isNaN(v)) return '—';
+  return v.toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+function kjStatus(item, m){
+  const pencapaian = item.pencapaian ? item.pencapaian[m] : null;
+  if(pencapaian === null || pencapaian === undefined) return {tier:'none', color:'var(--muted)', arrow:''};
+  if(item.pol === 2){
+    return {tier:'range', color:'#FBBF24', arrow:'▶'};
+  }
+  if(pencapaian >= 100) return {tier:'baik', color:'#34D399', arrow:'▲'};
+  if(pencapaian >= 95)  return {tier:'kurang', color:'#FBBF24', arrow:'▲'};
+  return {tier:'masalah', color:'#F87171', arrow:'▼'};
+}
+
+// Cari data UP3 yang aktif dipakai: live (dari Google Sheets) kalau berhasil dimuat, else fallback bawaan
+function getUP3Data(){ return up3LiveData || UP3_DATA_FALLBACK; }
+
+// Deteksi bulan terakhir yang sudah ada realisasinya (dipakai sebagai default tampilan)
+function detectDefaultMonth(data){
+  const firstItem = data.blocks.flatMap(b=>b.items).find(it=>it.real);
+  if(!firstItem) return 5;
+  for(let m=11; m>=0; m--){
+    if(firstItem.real[m] !== null && firstItem.real[m] !== undefined && firstItem.real[m] !== 0) return m;
+  }
+  return 0;
+}
+
+function populateMonthSelect(){
+  const sel = document.getElementById('kj-month');
+  sel.innerHTML = BULAN_ID.map((nm,i)=>`<option value="${i}">${nm} 2026</option>`).join('');
+  sel.value = kjSelectedMonth;
+  sel.onchange = ()=>{ kjSelectedMonth = parseInt(sel.value,10); renderKinerja(); };
+}
+
+function renderKinerja(){
+  const data = getUP3Data();
+  const m = kjSelectedMonth;
+  document.getElementById('kj-period').textContent = 'UP3 Madiun · Realisasi ' + BULAN_ID[m] + ' 2026';
+
+  let total=0, baik=0, kurang=0, masalah=0;
+  data.blocks.forEach(b=>b.items.forEach(it=>{
+    if(!it.pencapaian || it.pencapaian[m] === null || it.pencapaian[m] === undefined) return;
+    total++;
+    const s = kjStatus(it, m);
+    if(s.tier==='baik' || s.tier==='range') baik++;
+    else if(s.tier==='kurang') kurang++;
+    else if(s.tier==='masalah') masalah++;
+  }));
+  document.getElementById('kj-summary').innerHTML = `
+    <div class="kj-sum-pill"><span class="dot" style="background:var(--muted)"></span>Total <b>${total}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:#34D399"></span>Baik <b>${baik}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:#FBBF24"></span>Kurang <b>${kurang}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:#F87171"></span>Masalah <b>${masalah}</b></div>
+  `;
+
+  document.getElementById('kj-grid').innerHTML = data.blocks.map(b=>{
+    const ic = KJ_ICONS[b.icon] || KJ_ICONS.app;
+    const rows = b.items.map(it=>{
+      if(!it.pencapaian){
+        return `<div class="kj-label-only">${it.label}</div>`;
+      }
+      const pencapaian = it.pencapaian[m], target = it.target[m], real = it.real[m];
+      if(pencapaian === null || pencapaian === undefined){
+        return `
+        <div>
+          <div class="kj-row-label">${it.label}<span class="kj-unit">${it.unit?'('+it.unit+')':''}</span></div>
+          <div class="kj-row-meta"><span class="kj-vals" style="color:var(--muted)">Belum ada data bulan ini</span></div>
+        </div>`;
+      }
+      const s = kjStatus(it, m);
+      const targetDisp = (typeof target === 'string') ? target : idNum(target);
+      return `
+        <div>
+          <div class="kj-row-label">${it.label}<span class="kj-unit">${it.unit?'('+it.unit+')':''}</span></div>
+          <div class="kj-row-meta">
+            <span class="kj-pct" style="color:${s.color}">${idNum(pencapaian)}%</span>
+            <span class="kj-arrow" style="color:${s.color}">${s.arrow}</span>
+            <span class="kj-vals"><b>${targetDisp}</b> | ${idNum(real)}</span>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="kj-block">
+        <div class="kj-icon" style="background:${ic.bg}">${ic.svg}</div>
+        <div class="kj-rows">${rows}</div>
+      </div>`;
+  }).join('');
+}
+
+// ---------- Ambil data UP3 dari Google Sheets (posisi kolom tetap: R:AC target, AE:AP realisasi, AR:BC pencapaian) ----------
+const UP3_ROW_MAP = [
+  ['bulb',   [[5, 'Penjualan TL', 'GWh']]],
+  ['drop',   [[6, 'Susut tnp Emin', '%']]],
+  ['tower',  [[8,'SAIDI','menit/plg'], [9,'SAIFI','kali/plg'], [10,'ENS','MWh']]],
+  ['bolt',   [[12,'Eksekusi RUPTL','%'], [16,'Fisik Investasi','%']]],
+  ['mobile', [[18,'Delta Plg','plg'], [19,'Delta Daya','MVA'], [20,'Biaya Penyambungan','Rp Miliar'],
+              [21,'Delta Plg Lisdes','plg'], [22,'Delta kWh Lisdes','kWh']]],
+  ['woman',  [[24,'Rating Negatif Ggn','Kali'], [25,'RPT Ggn','Menit'], [26,'Success Auto Dispatch','%'],
+              [27,'Kali Trans PLN Mobile','kali'], [28,'Rp Trans PLN Mobile','Rp Miliar']]],
+  ['flash',  [[30,'Ggn TM','kali'], [31,'Rusak Alat Dist','Unit']]],
+  ['worker', [[33,'MVOD','%'], [34,'MTTR Siaga 1','%']]],
+  ['calc',   [[36,'Rata2 Tunggakan','Rp Juta'], [37,'Pelunasan PRR','Rp Juta'], [38,'Usulan PRR','Rp Miliar']]],
+  ['money',  [[40,'Penyerapan AI','%'], [41,'Hapus ATTB','Rp Juta'], [42,'Pengendalian NAC','Rp Juta']]],
+  ['meter',  [[44,'Perolehan P2TL','kWh'], [45,'Ganti Meter','Unit'], [46,'Tindak Lanjut LBKB','%']]],
+  ['app',    [[48,'Pengembangan Aset','%'], [49,'Efektifitas Har','%']]],
+  ['person', [[null, 'Kepatuhan, Matlev & Tata Kelola', null]]]
+];
+// Indeks kolom (0-based) dalam CSV mentah sheet UP3 -- HARUS sama urutan dengan Excel: A=0,B=1,C=2...
+const UP3_COL = { NO:0, NAMA:1, POL:2, TARGET_START:17, REALISASI_START:30, PENCAPAIAN_START:43 };
+
+function toNum12(cells, startCol){
+  const out = [];
+  for(let i=0;i<12;i++){
+    out.push(toNum(cells[startCol+i]));
+  }
+  return out;
+}
+
+function buildUP3DataFromCSV(rawRows){
+  // rawRows: array-of-array hasil parse CSV tanpa header (baris 1 file = baris 1 sheet)
+  // Baris data indikator ada di baris ke-5 s.d. ke-53 (1-based) -> index 4..52 (0-based)
+  const dataRows = rawRows.slice(4, 53);
+  const blocks = UP3_ROW_MAP.map(([icon, items])=>{
+    const outItems = items.map(([rowNum, label, unit])=>{
+      if(rowNum === null) return { label, unit, pol:null, target:null, real:null, pencapaian:null };
+      const r = dataRows[rowNum - 5]; // rowNum adalah nomor baris Excel 1-based
+      if(!r) return { label, unit, pol:null, target:null, real:null, pencapaian:null };
+      const pol = toNum(r[UP3_COL.POL]);
+      return {
+        label, unit, pol,
+        target: toNum12(r, UP3_COL.TARGET_START),
+        real: toNum12(r, UP3_COL.REALISASI_START),
+        pencapaian: toNum12(r, UP3_COL.PENCAPAIAN_START)
+      };
+    });
+    return { icon, items: outItems };
+  });
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return { months, blocks };
+}
+
+async function loadUP3Data(){
+  if(!CONFIG || !CONFIG.UP3_CSV_URL){ return; }
+  try{
+    const res = await fetch(CONFIG.UP3_CSV_URL);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    const parsed = Papa.parse(text, {header:false, skipEmptyLines:false});
+    const built = buildUP3DataFromCSV(parsed.data);
+    const hasData = built.blocks.some(b=>b.items.some(it=>it.target && it.target.some(v=>v!==null)));
+    if(!hasData) throw new Error('Data UP3 kosong / kolom tidak sesuai');
+    up3LiveData = built;
+  }catch(err){
+    console.error('[dashboard] gagal memuat data UP3 dari Google Sheets, pakai data bawaan:', err);
+    up3LiveData = null;
+  }
+}
+
+
+
+function initTabs(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.getAttribute('data-tab');
+      document.getElementById('view-ranking').style.display = (tab==='ranking') ? '' : 'none';
+      document.getElementById('view-kinerja').style.display = (tab==='kinerja') ? '' : 'none';
+    });
+  });
+}
+
 let focusedUlp = null; // null = semua
 
 // ---------- Ambil data dari Google Sheets (CSV publish-to-web), fallback ke data.js ----------
@@ -702,6 +2591,7 @@ function renderHeatmap(){
 (async function init(){
   await window.__libsReady;
   await loadData();
+  await loadUP3Data();
   document.getElementById('periode-label').textContent = D.periode;
 
   function safeRun(name, fn){
@@ -716,12 +2606,17 @@ function renderHeatmap(){
     document.body.prepend(warn);
   }
 
+  kjSelectedMonth = detectDefaultMonth(getUP3Data());
+
   safeRun('KPI', renderKPI);
   safeRun('Ranking', renderRanking);
   safeRun('Chart NKO', renderChart);
   safeRun('Indikator Select', populateIndikatorSelect);
   safeRun('Indikator Trend', renderIndikatorTrend);
   safeRun('Heatmap', renderHeatmap);
+  safeRun('Tabs', initTabs);
+  safeRun('Bulan Kinerja', populateMonthSelect);
+  safeRun('Dashboard Kinerja', renderKinerja);
 })();
 </script>
 </body>
