@@ -1987,12 +1987,14 @@ const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agus
 function kjStatus(item, m){
   const pencapaian = item.pencapaian ? item.pencapaian[m] : null;
   if(pencapaian === null || pencapaian === undefined) return {tier:'none', color:'var(--muted)', arrow:''};
-  if(item.pol === 2){
-    return {tier:'range', color:'#FBBF24', arrow:'▶'};
-  }
-  if(pencapaian >= 100) return {tier:'baik', color:'#34D399', arrow:'▲'};
-  if(pencapaian >= 95)  return {tier:'kurang', color:'#FBBF24', arrow:'▲'};
-  return {tier:'masalah', color:'#F87171', arrow:'▼'};
+
+  let tier, color;
+  if(pencapaian >= 100){ tier='baik'; color='#34D399'; }
+  else if(pencapaian >= 95){ tier='kurang'; color='#FBBF24'; }
+  else { tier='masalah'; color='#F87171'; }
+
+  const arrow = (item.pol === 2) ? '▶' : (tier==='masalah' ? '▼' : '▲');
+  return {tier, color, arrow};
 }
 
 // Cari data UP3 yang aktif dipakai: live (dari Google Sheets) kalau berhasil dimuat, else fallback bawaan
@@ -2025,7 +2027,7 @@ function renderKinerja(){
     if(!it.pencapaian || it.pencapaian[m] === null || it.pencapaian[m] === undefined) return;
     total++;
     const s = kjStatus(it, m);
-    if(s.tier==='baik' || s.tier==='range') baik++;
+    if(s.tier==='baik') baik++;
     else if(s.tier==='kurang') kurang++;
     else if(s.tier==='masalah') masalah++;
   }));
