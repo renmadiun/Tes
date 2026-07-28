@@ -2009,10 +2009,10 @@ function renderKinerja(){
     else if(s.tier==='masalah') masalah++;
   }));
   document.getElementById('kj-summary').innerHTML = `
-    <div class="kj-sum-pill"><span class="dot" style="background:var(--muted)"></span>Total <b>${total}</b></div>
-    <div class="kj-sum-pill"><span class="dot" style="background:#34D399"></span>Baik <b>${baik}</b></div>
-    <div class="kj-sum-pill"><span class="dot" style="background:#FBBF24"></span>Kurang <b>${kurang}</b></div>
-    <div class="kj-sum-pill"><span class="dot" style="background:#F87171"></span>Masalah <b>${masalah}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:var(--muted)"></span>Total <b style="color:var(--text)">${total}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:#34D399"></span>Baik <b style="color:#34D399">${baik}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:#FBBF24"></span>Kurang <b style="color:#FBBF24">${kurang}</b></div>
+    <div class="kj-sum-pill"><span class="dot" style="background:#F87171"></span>Masalah <b style="color:#F87171">${masalah}</b></div>
   `;
 
   document.getElementById('kj-grid').innerHTML = data.blocks.map(b=>{
