@@ -631,51 +631,28 @@ const UP3_DATA_FALLBACK = {
       "icon": "bolt",
       "items": [
         {
-          "label": "Eksekusi RUPTL",
-          "unit": "%",
+          "label": "Penambahan JTM",
+          "unit": "kms",
           "pol": 3.0,
-          "target": [
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100
-          ],
-          "real": [
-            100,
-            100,
-            100,
-            100,
-            110,
-            110,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "pencapaian": [
-            100,
-            100,
-            100,
-            100,
-            110,
-            110,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ]
+          "target": [0, 0, 0, 5.116755199, 7.675132798, 17.92174868, 18.93180701, 19.95497083, 22.51334843, 27.11805367, 35.81635028, 51.16567977],
+          "real": [0, 0, 0, 5.116755199, 38.25, 43.491, null, null, null, null, null, null],
+          "pencapaian": [100, 100, 100, 100, 110, 110, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "label": "Penambahan JTR",
+          "unit": "kms",
+          "pol": 3.0,
+          "target": [0, 0, 0, 14.145, 21.217, 49.499, 52.335, 55.164, 62.236, 74.967, 99.012, 141.447],
+          "real": [0, 0, 0, 14.145, 80.8, 97.276, null, null, null, null, null, null],
+          "pencapaian": [100, 100, 100, 100, 110, 110, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "label": "Penambahan Trafo",
+          "unit": "MVA",
+          "pol": 3.0,
+          "target": [0, 0, 0, 1.019335559, 1.529795979, 3.578771422, 3.772968321, 3.976676905, 4.486344684, 5.404222272, 7.137726834, 10.19731879],
+          "real": [0, 0, 0, 1.019335559, 18630.0, 22.965, null, null, null, null, null, null],
+          "pencapaian": [100, 100, 100, 100, 110, 110, 0, 0, 0, 0, 0, 0]
         },
         {
           "label": "Fisik Investasi",
@@ -2077,7 +2054,7 @@ const UP3_ROW_MAP = [
   ['bulb',   [[5, 'Penjualan TL', 'GWh']]],
   ['drop',   [[6, 'Susut tnp Emin', '%']]],
   ['tower',  [[8,'SAIDI','menit/plg'], [9,'SAIFI','kali/plg'], [10,'ENS','MWh']]],
-  ['bolt',   [[12,'Eksekusi RUPTL','%'], [16,'Fisik Investasi','%']]],
+  ['bolt',   [[13,'Penambahan JTM','kms'], [14,'Penambahan JTR','kms'], [15,'Penambahan Trafo','MVA'], [16,'Fisik Investasi','%']]],
   ['mobile', [[18,'Delta Plg','plg'], [19,'Delta Daya','MVA'], [20,'Biaya Penyambungan','Rp Miliar'],
               [21,'Delta Plg Lisdes','plg'], [22,'Delta kWh Lisdes','kWh']]],
   ['woman',  [[24,'Rating Negatif Ggn','Kali'], [25,'RPT Ggn','Menit'], [26,'Success Auto Dispatch','%'],
