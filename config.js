@@ -29,7 +29,7 @@
 // ============================================================
 
 const CONFIG = {
-  NKO_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKGq_OMlE6KE9F1duL3qZCIi7eib5SsuYZwUYwIrkMBT8SpQSe_0-cn9vkrz8wLCy3S8YHalfJUWvw/pubhtml?gid=234297028&single=true",
-  INDIKATOR_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2hHu9XdLJR1tnYthzECx0armrL40W8POGagzfnjnmMO_yGVERHqccySMs57KKQA/pub?gid=2060928322&single=true&output=csv",
+  NKO_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKGq_OMlE6KE9F1duL3qZCIi7eib5SsuYZwUYwIrkMBT8SpQSe_0-cn9vkrz8wLCy3S8YHalfJUWvw/pub?gid=234297028&single=true&output=csv",
+  INDIKATOR_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKGq_OMlE6KE9F1duL3qZCIi7eib5SsuYZwUYwIrkMBT8SpQSe_0-cn9vkrz8wLCy3S8YHalfJUWvw/pub?gid=2060928322&single=true&output=csv",
   UP3_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKGq_OMlE6KE9F1duL3qZCIi7eib5SsuYZwUYwIrkMBT8SpQSe_0-cn9vkrz8wLCy3S8YHalfJUWvw/pub?gid=1041037337&single=true&output=csv"
 };
