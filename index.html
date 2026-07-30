@@ -215,13 +215,22 @@
   .kj-brand-mark svg{ width:22px; height:22px; }
   #kj-title{ font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--text); margin:0; }
   #kj-period{ font-size:12px; color:var(--muted); margin:2px 0 0; }
-  .kj-summary{ display:flex; gap:10px; flex-wrap:wrap; }
+  .kj-summary{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .kj-sum-pill{
     display:flex; align-items:center; gap:7px; padding:8px 14px; border-radius:10px;
     background:var(--panel-2); border:1px solid var(--line); font-size:12.5px; color:var(--muted);
   }
   .kj-sum-pill b{ font-family:'IBM Plex Mono',monospace; font-size:14px; }
   .kj-sum-pill .dot{ width:8px; height:8px; border-radius:50%; }
+
+  .kj-sum-pill-hero{
+    display:flex; align-items:center; gap:10px; padding:10px 20px; border-radius:12px;
+    background:rgba(46,139,255,0.14); border:1.5px solid rgba(46,139,255,0.45);
+    font-size:14px; font-weight:600; color:#BFDBFF;
+    box-shadow:0 0 0 1px rgba(46,139,255,0.08) inset, 0 4px 14px rgba(46,139,255,0.12);
+  }
+  .kj-sum-pill-hero .dot{ width:10px; height:10px; border-radius:50%; box-shadow:0 0 8px rgba(46,139,255,0.8); }
+  .kj-sum-pill-hero b{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; letter-spacing:-0.3px; }
 
   .kj-grid{
     column-count:4; column-gap:16px;
@@ -2220,7 +2229,7 @@ function renderKinerja(){
   }));
   const nkoUp3 = computeNkoUP3(data, m);
   document.getElementById('kj-summary').innerHTML = `
-    <div class="kj-sum-pill"><span class="dot" style="background:#2E8BFF"></span>NKO UP3 <b style="color:#2E8BFF">${nkoUp3===null?'—':idNum(nkoUp3)}</b></div>
+    <div class="kj-sum-pill-hero"><span class="dot" style="background:#2E8BFF"></span>NKO UP3 <b style="color:#5EA6FF">${nkoUp3===null?'—':idNum(nkoUp3)}</b></div>
     <div class="kj-sum-pill"><span class="dot" style="background:var(--muted)"></span>Total <b style="color:var(--text)">${total}</b></div>
     <div class="kj-sum-pill"><span class="dot" style="background:#34D399"></span>Baik <b style="color:#34D399">${baik}</b></div>
     <div class="kj-sum-pill"><span class="dot" style="background:#FBBF24"></span>Kurang <b style="color:#FBBF24">${kurang}</b></div>
